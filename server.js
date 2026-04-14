@@ -21,27 +21,34 @@ io.on("connection", (socket) => {
   console.log("A client has connected.");
 
   // ask AI
-  socket.on("ask_ai", async (question) => {
+  socket.on("ask_ai", async (location, units) => {
     try {
       // send back the waiting status
       socket.emit("ai_response", "Waiting...");
       
+      const now = new Date();
+      const hour = now.getHours();
+
       let weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&hourly=temperature_2m,wind_speed_10m,precipitation,precipitation_probability&forecast_days=1`);
       let weatherData = await weatherResponse.json();
-      let currentTemp = await weatherData.hourly.temperature_2m[0];
-      let currentWind = await weatherData.hourly.wind_speed_10m[0];
-      let currentRain = await weatherData.hourly.precipitation[0];
-      let currentRainChance = await weatherData.hourly.precipitation_probability[0];
+      let currentTemp = await weatherData.hourly.temperature_2m[hour];
+      if(units == "F"){
+        currentTemp = (currentTemp * 9/5) + 32;
+      }
+      let currentWind = await weatherData.hourly.wind_speed_10m[hour];
+      let currentRain = await weatherData.hourly.precipitation[hour];
+      let currentRainChance = await weatherData.hourly.precipitation_probability[hour];
       console.log(currentTemp);
       console.log(currentWind);
       console.log(currentRain);
       console.log(currentRainChance);
       let prompt = `You are a helpful weather assistant.
                     Here is the weather data:
-                    Temperature: ${currentTemp}°C,
+                    Temperature: ${currentTemp}°${units},
                     Precipitation: ${currentRain} mm,
                     Wind Speed: ${currentWind} km/h,
                     Chance of Rain: ${currentRainChance} %,
+                    Current time (hour): ${} (0 is midnight and 23 is 11PM)
                     
                     Write a short, helpful summary for a student.
                     Include:
