@@ -48,7 +48,7 @@ io.on("connection", (socket) => {
                     Precipitation: ${currentRain} mm,
                     Wind Speed: ${currentWind} km/h,
                     Chance of Rain: ${currentRainChance} %,
-                    Current time (hour): ${} (0 is midnight and 23 is 11PM)
+                    Current time (hour): ${hour} (0 is midnight and 23 is 11PM)
                     
                     Write a short, helpful summary for a student.
                     Include:
@@ -56,7 +56,7 @@ io.on("connection", (socket) => {
                     - What they should do or wear
                     
                     Keep it under 4 sentences.
-                    Make sure to integrate all the exact raw data figures into your response. 
+                    Make sure to integrate all the exact raw data figures into your response, except the current hour. 
                     `;
       // send a request and wait for the response
       const response = await fetch(API_BASE_URL, {
