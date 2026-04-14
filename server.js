@@ -7,6 +7,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// user location
+let userLocation = {lat: 48.4359, lng: -123.3516};
+
 app.use(express.static("public"));
 
 // AI API request variables
@@ -26,7 +29,7 @@ io.on("connection", (socket) => {
       const now = new Date();
       const hour = now.getHours();
 
-      let weatherResponse = await fetch("https://api.open-meteo.com/v1/forecast?latitude=48.4359&longitude=-123.3516&hourly=temperature_2m,wind_speed_10m,precipitation,precipitation_probability&forecast_days=1");
+      let weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&hourly=temperature_2m,wind_speed_10m,precipitation,precipitation_probability&forecast_days=1`);
       let weatherData = await weatherResponse.json();
       let currentTemp = await weatherData.hourly.temperature_2m[hour];
       if(units == "F"){
@@ -45,6 +48,7 @@ io.on("connection", (socket) => {
                     Precipitation: ${currentRain} mm,
                     Wind Speed: ${currentWind} km/h,
                     Chance of Rain: ${currentRainChance} %,
+                    Current time (hour): ${} (0 is midnight and 23 is 11PM)
                     
                     Write a short, helpful summary for a student.
                     Include:
@@ -82,6 +86,14 @@ io.on("connection", (socket) => {
       console.error("API error:", error);
       socket.emit("ai_response", `[Error]: ${error.message}`);
     }
+  });
+
+  socket.on("send_location", async (location) => {
+    
+    userLocation.lat = location.lat;
+    userLocation.lng = location.lng;
+    console.log(`User location: lat_${userLocation.lat}, lng_${userLocation.lng}`);
+    
   });
 
   // disconnect
