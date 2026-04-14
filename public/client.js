@@ -2,6 +2,7 @@ const socket = io();
 
 const chatWindow = document.getElementById("chat-window");
 const userInput = document.getElementById("userInput");
+const unitButton = document.getElementById("unitsButton");
 
 // connected to the server
 socket.on("connect", () => {
@@ -22,19 +23,24 @@ socket.on("ai_response", (msg) => {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 });
 
+let units = "C";
+
+function switchUnits(){
+  if(units == "C"){
+    units = "F";
+    unitButton.innerHTML = "°F";
+  }else{
+    units = "C";
+    unitButton.innerHTML = "°C";
+  }
+  console.log("Units:" + units);
+}
 // send message to server
 function sendMessage() {
-  const text = userInput.value.trim();
-  if (!text) return;
-
-  // show user's message in chatWindow
-  chatWindow.innerHTML += `<div class="msg-user"><strong>You:</strong> ${text}</div>`;
-  chatWindow.scrollTop = chatWindow.scrollHeight;
-
-  // send text to server
-  socket.emit("ask_ai", text);
+  const location = "";
   
-  userInput.value = ""; 
+  // send text to server
+  socket.emit("ask_ai", location, units);
 }
 
 // press Enter to send the message
