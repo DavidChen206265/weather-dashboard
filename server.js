@@ -21,7 +21,7 @@ io.on("connection", (socket) => {
   console.log("A client has connected.");
 
   // ask AI
-  socket.on("ask_ai", async (location, units) => {
+  socket.on("ask_ai", async (units) => {
     try {
       // send back the waiting status
       socket.emit("ai_response", "Waiting...");

@@ -2,9 +2,13 @@ const socket = io();
 
 const chatWindow = document.getElementById("chat-window");
 const userInput = document.getElementById("userInput");
+const unitButton = document.getElementById("unitsButton");
 
 // location
 let userLocation = {lat: 48.4359, lng: -123.3516};
+
+let units = "C";
+
 
 // connected to the server
 socket.on("connect", async () => {
@@ -38,7 +42,7 @@ function sendMessage() {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
   // send text to server
-  socket.emit("ask_ai", text);
+  socket.emit("ask_ai", units);
   
   userInput.value = ""; 
 }
@@ -70,4 +74,15 @@ function sendUserLocation() {
       { enableHighAccuracy: true, timeout: 10000 },
     );
   });
-} // updateUserLocation
+} 
+
+function switchUnits(){
+  if(units == "C"){
+    units = "F";
+    unitButton.innerHTML = "°F";
+  }else{
+    units = "C";
+    unitButton.innerHTML = "°C";
+  }
+  console.log("Units:" + units);
+}
