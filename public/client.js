@@ -1,7 +1,6 @@
 const socket = io();
 
 const chatWindow = document.getElementById("chat-window");
-const userInput = document.getElementById("userInput");
 const unitButton = document.getElementById("unitsButton");
 
 // location
@@ -34,17 +33,13 @@ socket.on("ai_response", (msg) => {
 
 // send message to server
 function sendMessage() {
-  const text = userInput.value.trim();
-  if (!text) return;
 
   // show user's message in chatWindow
-  chatWindow.innerHTML += `<div class="msg-user"><strong>You:</strong> ${text}</div>`;
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
-  // send text to server
+  // send request to server
   socket.emit("ask_ai", units);
   
-  userInput.value = ""; 
 }
 
 // press Enter to send the message
