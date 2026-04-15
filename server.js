@@ -1,4 +1,5 @@
 require("dotenv").config();
+const { log } = require("console");
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -21,7 +22,7 @@ io.on("connection", (socket) => {
   console.log("A client has connected.");
 
   // ask AI
-  socket.on("ask_ai", async (units) => {
+  socket.on("require_weather_data", async (units) => {
     try {
       // send back the waiting status
       socket.emit("ai_response", "Waiting...");
@@ -63,7 +64,7 @@ io.on("connection", (socket) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.API_KEY}`,
+          Authorization: `Bearer ${process.env.AI_API_KEY}`,
         },
         body: JSON.stringify({
           model: MODEL_ID,
@@ -94,6 +95,29 @@ io.on("connection", (socket) => {
     userLocation.lng = location.lng;
     console.log(`User location: lat_${userLocation.lat}, lng_${userLocation.lng}`);
     
+  });
+
+  // search for location
+  socket.on("search_for_location", async (searchText) => {
+    try {
+
+      console.log('User searches for: ' + searchText);
+      
+
+      // send back the waiting status
+      socket.emit("location_response", "Waiting...");
+
+      let locationResponse = await fetch(`https://us1.locationiq.com/v1/search?key=${process.env.GEO_API_KEY}&q=${searchText}&format=json&`);
+      let locationData = await locationResponse.json();
+
+      console.log(locationData);
+
+      // send back the waiting status
+      socket.emit("location_response", locationData);
+      
+    } catch (error) {
+      console.error("API error:", error);
+    }
   });
 
   // disconnect
