@@ -13,6 +13,9 @@ let locationSearchingData = '';
 
 let units = "C";
 
+window.onload = (event) => {
+  updateCurrentLocation();
+};
 
 // connected to the server
 socket.on("connect", async () => {
@@ -50,10 +53,28 @@ socket.on("location_response", (msg) => {
     // if the data is valid
 
     locationSearchingData = msg;
-
+    let place;
     for (let i = 0; i < msg.length; i++) {
-      let place = msg[i];
-      placeSelectionBar.innerHTML += `<div class="place-selection">${place.display_name}</div>`;
+      place = msg[i];
+      placeSelectionBar.innerHTML += `<div class="place-selection" id="${place.lat},${place.lon}">${place.display_name}</div>`;
+    }
+
+    // add eventlisteners
+    for (let t = 0; t < msg.length; t++){
+      place = msg[t];
+      document.getElementById(place.lat + "," + place.lon).addEventListener("click", function selectLocation() {
+        let position = this.id.split(",");
+        console.log(position);
+        userLocation.lat = position[0];
+        userLocation.lng = position[1];
+        console.log("lat:" + userLocation.lat + " long:" + userLocation.lng);
+        console.log(``);
+        for (let j = 0; j < locationSearchingData.length; j++) {
+          document.getElementById(locationSearchingData[j].lat + "," + locationSearchingData[j].lon).removeEventListener("click", selectLocation);
+          //console.log(`deleted ${locationSearchingData[j].display_name}`);
+        }
+        placeSelectionBar.innerHTML = '';
+      })
     }
   }
 });
@@ -94,6 +115,13 @@ function searchLocation() {
 
 // send user location to server
 function sendUserLocation() {
+  // send location to server
+  console.log(userLocation + " Senduserlocation");
+  socket.emit("send_location", userLocation);
+}
+
+function updateCurrentLocation(){
+  
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -101,10 +129,8 @@ function sendUserLocation() {
         // get the location
         userLocation.lat = position.coords.latitude;
         userLocation.lng = position.coords.longitude;
-        console.log(`User location: lat_${userLocation.lat}, lng_${userLocation.lng}`);
-
-        // send location to server
-        socket.emit("send_location", userLocation);
+        console.log(`User current location: lat_${userLocation.lat}, lng_${userLocation.lng}`);
+        
         resolve();
       },
       (error) => {
@@ -114,6 +140,7 @@ function sendUserLocation() {
       { enableHighAccuracy: true, timeout: 10000 },
     );
   });
+  
 }
 
 function switchUnits() {

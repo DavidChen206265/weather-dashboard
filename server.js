@@ -31,6 +31,7 @@ io.on("connection", (socket) => {
       const hour = now.getHours();
 
       let weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&hourly=temperature_2m,wind_speed_10m,precipitation,precipitation_probability&forecast_days=1`);
+      console.log(userLocation.lat + "," + userLocation.lng);
       let weatherData = await weatherResponse.json();
       let currentTemp = await weatherData.hourly.temperature_2m[hour];
       if(units == "F"){
