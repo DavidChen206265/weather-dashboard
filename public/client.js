@@ -2,9 +2,14 @@ const socket = io();
 
 const chatWindow = document.getElementById("chat-window");
 const unitButton = document.getElementById("unitsButton");
+const locationInput = document.getElementById("location-input");
+const searchButton = document.getElementById("search-button");
+const placeSelectionBar = document.getElementById("place-selection-bar");
 
 // location
-let userLocation = {lat: 48.4359, lng: -123.3516};
+let userLocation = { lat: 48.4359, lng: -123.3516 };
+
+let locationSearchingData = '';
 
 let units = "C";
 
@@ -13,14 +18,14 @@ let units = "C";
 socket.on("connect", async () => {
   chatWindow.innerHTML =
     '<div style="color: green;">System: Connected to the server.</div>';
-  
+
   // test
   await sendUserLocation();
 });
 
 // listen for AI response from server
 socket.on("ai_response", (msg) => {
-  
+
   if (msg === "Waiting...") {
     chatWindow.innerHTML += `<div class="msg-ai" id="loading"><strong>AI:</strong> ${msg}</div>`;
   } else {
@@ -31,20 +36,60 @@ socket.on("ai_response", (msg) => {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 });
 
+// listen for location searching response
+socket.on("location_response", (msg) => {
+
+  locationData = '';
+
+  if (msg === "Waiting...") {
+    placeSelectionBar.innerHTML = '';
+  } else if (msg.length === 0) {
+    placeSelectionBar.innerHTML = 'No Result Found';
+  } else {
+
+    // if the data is valid
+
+    locationSearchingData = msg;
+
+    for (let i = 0; i < msg.length; i++) {
+      let place = msg[i];
+      placeSelectionBar.innerHTML += `<div class="place-selection">${place.display_name}</div>`;
+    }
+  }
+});
+
 // send message to server
-function sendMessage() {
+function requireWeatherData() {
 
   // show user's message in chatWindow
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
   // send request to server
-  socket.emit("ask_ai", units);
-  
+  socket.emit("require_weather_data", units);
+
 }
 
-// press Enter to send the message
+// press Enter to search for location
 function checkEnter(e) {
-  if (e.key === "Enter") sendMessage();
+  if (e.key === "Enter") searchLocation();
+}
+
+function searchLocation() {  
+
+  console.log('Searching for: ' + locationInput.value);
+  
+
+  let searchText = locationInput.value;
+
+  // check for input
+  if (!searchText) {
+    alert('Please enter a place to search for.');
+    return;
+  }
+
+  // send search request
+  socket.emit("search_for_location", searchText);
+
 }
 
 // send user location to server
@@ -57,7 +102,7 @@ function sendUserLocation() {
         userLocation.lat = position.coords.latitude;
         userLocation.lng = position.coords.longitude;
         console.log(`User location: lat_${userLocation.lat}, lng_${userLocation.lng}`);
-        
+
         // send location to server
         socket.emit("send_location", userLocation);
         resolve();
@@ -69,13 +114,13 @@ function sendUserLocation() {
       { enableHighAccuracy: true, timeout: 10000 },
     );
   });
-} 
+}
 
-function switchUnits(){
-  if(units == "C"){
+function switchUnits() {
+  if (units == "C") {
     units = "F";
     unitButton.innerHTML = "°F";
-  }else{
+  } else {
     units = "C";
     unitButton.innerHTML = "°C";
   }
