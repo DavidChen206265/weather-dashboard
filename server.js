@@ -9,7 +9,8 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // user location
-let userLocation = {lat: 48.4359, lng: -123.3516};
+let userLocation = { lat: 48.4359, lng: -123.3516 };
+let currentUserLocation = { lat: 48.4359, lng: -123.3516 };
 
 app.use(express.static("public"));
 
@@ -26,7 +27,7 @@ io.on("connection", (socket) => {
     try {
       // send back the waiting status
       socket.emit("ai_response", "Waiting...");
-      
+
       const now = new Date();
       const hour = now.getHours();
 
@@ -34,8 +35,8 @@ io.on("connection", (socket) => {
       console.log(userLocation.lat + "," + userLocation.lng);
       let weatherData = await weatherResponse.json();
       let currentTemp = await weatherData.hourly.temperature_2m[hour];
-      if(units == "F"){
-        currentTemp = (currentTemp * 9/5) + 32;
+      if (units == "F") {
+        currentTemp = (currentTemp * 9 / 5) + 32;
       }
       let currentWind = await weatherData.hourly.wind_speed_10m[hour];
       let currentRain = await weatherData.hourly.precipitation[hour];
@@ -90,6 +91,7 @@ io.on("connection", (socket) => {
     }
   });
 
+
   socket.on("get_seven", async () => {
     let sevenDayForecast = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&daily=temperature_2m_max,temperature_2m_min,weather_code`);
     let sevenDayForecastInfo = await sevenDayForecast.json();
@@ -97,12 +99,18 @@ io.on("connection", (socket) => {
     socket.emit("sevenDayForecast", sevenDayForecastInfo);
   });
 
-  socket.on("send_location", async (location) => {
-    
-    userLocation.lat = location.lat;
-    userLocation.lng = location.lng;
-    console.log(`User location: lat_${userLocation.lat}, lng_${userLocation.lng}`);
-    
+  socket.on("send_location", async (location, isCurrent) => {
+
+    if (isCurrent) {
+      currentUserLocation.lat = location.lat;
+      currentUserLocation.lng = location.lng;
+      console.log(`Current user location: lat_${currentUserLocation.lat}, lng_${currentUserLocation.lng}`);
+    } else {
+      userLocation.lat = location.lat;
+      userLocation.lng = location.lng;
+      console.log(`User location: lat_${userLocation.lat}, lng_${userLocation.lng}`);
+    }
+
   });
 
   // search for location
@@ -110,19 +118,19 @@ io.on("connection", (socket) => {
     try {
 
       console.log('User searches for: ' + searchText);
-      
+
 
       // send back the waiting status
       socket.emit("location_response", "Waiting...");
 
-      let locationResponse = await fetch(`https://us1.locationiq.com/v1/search?key=${process.env.GEO_API_KEY}&q=${searchText}&format=json&`);
+      let locationResponse = await fetch(`https://us1.locationiq.com/v1/search?key=${process.env.GEO_API_KEY}&q=${searchText}&format=json&limit=20&bounded=0&importancesort=0&viewbox=${currentUserLocation.lng + 1},${currentUserLocation.lat + 1},${currentUserLocation.lng - 1},${currentUserLocation.lat - 1}`);
       let locationData = await locationResponse.json();
 
       console.log(locationData);
 
       // send back the waiting status
       socket.emit("location_response", locationData);
-      
+
     } catch (error) {
       console.error("API error:", error);
     }
