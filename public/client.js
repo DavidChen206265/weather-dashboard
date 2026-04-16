@@ -8,6 +8,7 @@ const placeSelectionBar = document.getElementById("place-selection-bar");
 
 // location
 let userLocation = { lat: 48.4359, lng: -123.3516 };
+let currentUserLocation = { lat: 48.4359, lng: -123.3516 };
 
 let locationSearchingData = '';
 
@@ -22,8 +23,7 @@ socket.on("connect", async () => {
   chatWindow.innerHTML =
     '<div style="color: green;">System: Connected to the server.</div>';
 
-  // test
-  await sendUserLocation();
+  sendUserLocation(true);
 });
 
 // listen for AI response from server
@@ -47,7 +47,9 @@ socket.on("location_response", (msg) => {
   if (msg === "Waiting...") {
     placeSelectionBar.innerHTML = '';
   } else if (msg.length === 0) {
-    placeSelectionBar.innerHTML = 'No Result Found';
+    placeSelectionBar.innerHTML = 'No Results Found';
+  } else if (msg.error) {
+    placeSelectionBar.innerHTML = 'No Results Found';
   } else {
 
     // if the data is valid
@@ -71,9 +73,9 @@ socket.on("location_response", (msg) => {
         console.log(``);
         for (let j = 0; j < locationSearchingData.length; j++) {
           document.getElementById(locationSearchingData[j].lat + "," + locationSearchingData[j].lon).removeEventListener("click", selectLocation);
-          //console.log(`deleted ${locationSearchingData[j].display_name}`);
         }
         placeSelectionBar.innerHTML = '';
+        locationInput.value = '';
       })
     }
   }
@@ -84,6 +86,9 @@ function requireWeatherData() {
 
   // show user's message in chatWindow
   chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  // send user location
+  sendUserLocation();
 
   // send request to server
   socket.emit("require_weather_data", units);
@@ -114,10 +119,10 @@ function searchLocation() {
 }
 
 // send user location to server
-function sendUserLocation() {
+function sendUserLocation(isCurrent = false) {
+  
   // send location to server
-  console.log(userLocation + " Senduserlocation");
-  socket.emit("send_location", userLocation);
+  socket.emit("send_location", userLocation, isCurrent);
 }
 
 function updateCurrentLocation(){
