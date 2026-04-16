@@ -15,7 +15,21 @@ let units = "C";
 
 window.onload = (event) => {
   updateCurrentLocation();
+  getSevenDayForecast();
 };
+
+async function getSevenDayForecast() {
+  socket.emit("get_seven") 
+  
+}
+socket.on("sevenDayForecast", async (info) => {
+  console.log(info);
+  for(let r = 0; r < 7; r++){
+    //info.daily.temperature_2m_max[r] <<-- where we can print to the nodes
+    //info.daily.temperature_2m_min[r]
+    //info.daily.weather_code[r]
+  }
+});
 
 // connected to the server
 socket.on("connect", async () => {
