@@ -18,8 +18,23 @@ body {
 }
 
 .input-group {
-    display: flex;
+    display: grid;
+    grid-template-areas: "AI AI AI AI AI AI AI Units"
+    "Input Input Input Input Input Input Button Button";
     gap: 10px;
+}
+
+#AIrequest{
+    grid-area:AI;
+}
+#unitsButton{
+    grid-area:Units;
+}
+#location-input{
+    grid-area:Input;
+}
+#search-button{
+    grid-area:Button;
 }
 
 button {
