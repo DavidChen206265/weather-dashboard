@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Hello World</title>
+    <title>Weather App</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -17,12 +17,16 @@
     <div id="place-selection-bar"></div>
 
     <h2>AI Hello World</h2>
+    <h2>Weather App</h2>
     <div id="chat-window">Connecting...</div>
 
     <div class="input-group">
-        <button onclick="requireWeatherData()">Request Current Weather</button>
+        <button onclick="requireWeatherData()" id="AIrequest">Request Current Weather</button>
         <button onclick="switchUnits()" id="unitsButton">°C</button>
+        <input id="location-input" type="text">
+        <button id="search-button" onclick="searchLocation()">Search</button>
     </div>
+    <div id="place-selection-bar"></div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="/client.js"></script>
