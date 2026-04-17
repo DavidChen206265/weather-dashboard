@@ -8,6 +8,7 @@ const searchButton = document.getElementById("search-button");
 const currentLocationButton = document.getElementById("current-location-button");
 const placeSelectionBar = document.getElementById("place-selection-bar");
 
+
 // location
 let userLocation = { lat: 48.4359, lng: -123.3516 };
 let currentUserLocation = { lat: 48.4359, lng: -123.3516 };
@@ -22,12 +23,36 @@ window.onload = (event) => {
 };
 
 async function getSevenDayForecast() {
+  sendUserLocation(true);
   socket.emit("get_seven") 
   
 }
 socket.on("sevenDayForecast", async (info) => {
-  console.log(info);
   for(let r = 0; r < 7; r++){
+    let emoji = "";
+    //set background colours based off weather code
+    document.getElementById("daybox" + r).style.color = "#000";
+    if(info.daily.weather_code[r] == 3){
+      document.getElementById("daybox" + r).style.backgroundColor = "#BBB";
+      emoji = "☁️";
+    }else if(info.daily.weather_code[r] == 1){
+      document.getElementById("daybox" + r).style.backgroundColor = "#87CEEB";
+      emoji = "☀️";
+    }else if(info.daily.weather_code[r] > 50){
+      document.getElementById("daybox" + r).style.backgroundColor = "#29395b";
+      document.getElementById("daybox" + r).style.color = "#FFF";
+      emoji = "🌧️";
+    }else{
+      document.getElementById("daybox" + r).style.backgroundColor = "#87CEEB";
+      emoji = "☀️";
+    }
+    //set Inner text with values
+    if(units == "C"){
+      document.getElementById("daybox" + r).innerHTML = emoji + "<br>" + info.daily.temperature_2m_max[r] + "°C<br>" + info.daily.temperature_2m_min[r] + "°C"
+    }else{
+      document.getElementById("daybox" + r).innerHTML = emoji + "<br>" + Math.floor((info.daily.temperature_2m_max[r] * 9 / 5) + 32) + "°F<br>" + Math.floor((info.daily.temperature_2m_min[r] * 9 / 5) + 32) + "°F"
+    }
+    
     //info.daily.temperature_2m_max[r] <<-- where we can print to the nodes
     //info.daily.temperature_2m_min[r]
     //info.daily.weather_code[r]
