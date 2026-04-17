@@ -18,6 +18,10 @@ app.use(express.static("public"));
 const API_BASE_URL = "https://api.cetaceang.qzz.io/v1/chat/completions";
 const MODEL_ID = "gpt-oss-20b";
 
+// keys
+const AI_API_KEY = process.env.AI_API_KEY;
+const GEO_API_KEY = process.env.GEO_API_KEY;
+
 // after a client connected
 io.on("connection", (socket) => {
   console.log("A client has connected.");
@@ -66,7 +70,7 @@ io.on("connection", (socket) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.AI_API_KEY}`,
+          Authorization: `Bearer ${AI_API_KEY}`,
         },
         body: JSON.stringify({
           model: MODEL_ID,
@@ -91,6 +95,29 @@ io.on("connection", (socket) => {
     }
   });
 
+  // require location name
+  socket.on("require_location_name", async (lat, lng) => {
+    try {
+
+      console.log('test input: ' + lat + ' ' + lng );
+      
+
+      // send back the waiting status
+      // socket.emit("location_name_response", "Waiting...");
+
+      let locationNameResponse = await fetch(`https://us1.locationiq.com/v1/reverse?key=${GEO_API_KEY}&lat=${lat}&lon=${lng}&format=json`);
+      console.log(userLocation.lat + "," + userLocation.lng);
+      let locationNameData = await locationNameResponse.json();
+
+      // send back the response
+      socket.emit("location_name_response", locationNameData);
+
+      console.log(`test location name: ${locationNameData}`);
+      
+    } catch (error) {
+      console.error("API error:", error);
+      socket.emit("location_name_response", `[Error]: ${error.message}`);
+    }
 
   socket.on("get_seven", async () => {
     let sevenDayForecast = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&daily=temperature_2m_max,temperature_2m_min,weather_code`);
@@ -123,7 +150,7 @@ io.on("connection", (socket) => {
       // send back the waiting status
       socket.emit("location_response", "Waiting...");
 
-      let locationResponse = await fetch(`https://us1.locationiq.com/v1/search?key=${process.env.GEO_API_KEY}&q=${searchText}&format=json&limit=20&bounded=0&importancesort=0&viewbox=${currentUserLocation.lng + 1},${currentUserLocation.lat + 1},${currentUserLocation.lng - 1},${currentUserLocation.lat - 1}`);
+      let locationResponse = await fetch(`https://us1.locationiq.com/v1/search?key=${GEO_API_KEY}&q=${searchText}&format=json&limit=20&bounded=0&importancesort=0&viewbox=${currentUserLocation.lng + 1},${currentUserLocation.lat + 1},${currentUserLocation.lng - 1},${currentUserLocation.lat - 1}`);
       let locationData = await locationResponse.json();
 
       console.log(locationData);

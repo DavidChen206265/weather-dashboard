@@ -3,7 +3,9 @@ const socket = io();
 const chatWindow = document.getElementById("chat-window");
 const unitButton = document.getElementById("unitsButton");
 const locationInput = document.getElementById("location-input");
+const locationDisplay = document.getElementById("location-display");
 const searchButton = document.getElementById("search-button");
+const currentLocationButton = document.getElementById("current-location-button");
 const placeSelectionBar = document.getElementById("place-selection-bar");
 
 // location
@@ -15,7 +17,7 @@ let locationSearchingData = '';
 let units = "C";
 
 window.onload = (event) => {
-  updateCurrentLocation();
+  updateCurrentLocation().then(getLocationName(currentUserLocation.lat, currentUserLocation.lng));
   getSevenDayForecast();
 };
 
@@ -53,6 +55,36 @@ socket.on("ai_response", (msg) => {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 });
 
+// listen for location name response
+socket.on("location_name_response", (locationNameData) => {
+
+  console.log('Location Name Data: ' + locationNameData);
+  
+  locationDisplay.innerText = '';
+
+  if (Object.hasOwn(locationNameData, "address")) {
+    if (Object.hasOwn(locationNameData.address, "suburb")) {
+      locationDisplay.innerText += (locationNameData.address.suburb + ', ');
+
+    } 
+    if (Object.hasOwn(locationNameData.address, "neighborhood")) {
+      locationDisplay.innerText += (locationNameData.address.neighborhood + ', ');
+    } 
+    if (Object.hasOwn(locationNameData.address, "city")) {
+      locationDisplay.innerText += (locationNameData.address.city + ', ');
+    } 
+    if (Object.hasOwn(locationNameData.address, "county")) {
+      locationDisplay.innerText += (locationNameData.address.county + ', ');
+    } 
+    if (Object.hasOwn(locationNameData.address, "state")) {
+      locationDisplay.innerText += (locationNameData.address.state);
+    } 
+  } else {
+    console.log('No address available!');
+  }
+
+})
+
 // listen for location searching response
 socket.on("location_response", (msg) => {
 
@@ -76,13 +108,20 @@ socket.on("location_response", (msg) => {
     }
 
     // add eventlisteners
-    for (let t = 0; t < msg.length; t++){
+    for (let t = 0; t < msg.length; t++) {
       place = msg[t];
+
       document.getElementById(place.lat + "," + place.lon).addEventListener("click", function selectLocation() {
         let position = this.id.split(",");
         console.log(position);
+
+        // set userLocation
         userLocation.lat = position[0];
         userLocation.lng = position[1];
+
+        // update location name
+        getLocationName(userLocation.lat, userLocation.lng);
+
         console.log("lat:" + userLocation.lat + " long:" + userLocation.lng);
         console.log(``);
         for (let j = 0; j < locationSearchingData.length; j++) {
@@ -90,7 +129,8 @@ socket.on("location_response", (msg) => {
         }
         placeSelectionBar.innerHTML = '';
         locationInput.value = '';
-      })
+      });
+
     }
   }
 });
@@ -114,10 +154,10 @@ function checkEnter(e) {
   if (e.key === "Enter") searchLocation();
 }
 
-function searchLocation() {  
+function searchLocation() {
 
   console.log('Searching for: ' + locationInput.value);
-  
+
 
   let searchText = locationInput.value;
 
@@ -132,15 +172,22 @@ function searchLocation() {
 
 }
 
+function getLocationName(lat, lng) {
+
+  // send search request
+  socket.emit("require_location_name", lat, lng);
+
+}
+
 // send user location to server
 function sendUserLocation(isCurrent = false) {
-  
+
   // send location to server
   socket.emit("send_location", userLocation, isCurrent);
 }
 
-function updateCurrentLocation(){
-  
+function updateCurrentLocation() {
+
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -149,7 +196,7 @@ function updateCurrentLocation(){
         userLocation.lat = position.coords.latitude;
         userLocation.lng = position.coords.longitude;
         console.log(`User current location: lat_${userLocation.lat}, lng_${userLocation.lng}`);
-        
+
         resolve();
       },
       (error) => {
@@ -159,7 +206,7 @@ function updateCurrentLocation(){
       { enableHighAccuracy: true, timeout: 10000 },
     );
   });
-  
+
 }
 
 function switchUnits() {
@@ -171,4 +218,9 @@ function switchUnits() {
     unitButton.innerHTML = "°C";
   }
   console.log("Units:" + units);
+}
+
+function backToCurrentLocation() {
+  updateCurrentLocation().then(getLocationName(currentUserLocation.lat, currentUserLocation.lng));
+  sendUserLocation(true);
 }
