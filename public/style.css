@@ -51,6 +51,15 @@ button {
 button:hover {
     background: #0056b3;
 }
+#refreshdaybox {
+    background-color: #007bff;
+    color:white;
+    align-content:center;
+    font-weight:900;
+}
+#refreshdaybox:hover {
+    background-color:#0056b3;
+}
 
 .msg-user {
     color: #0056b3;
@@ -62,4 +71,23 @@ button:hover {
     margin-bottom: 10px;
     border-bottom: 1px dashed #ddd;
     padding-bottom: 10px;
+}
+
+#seven-day-forecast{
+    display:grid;
+    grid-template-columns:repeat(8, 1fr);
+    gap:5px;
+    margin:10px;
+}
+.daybox {
+    background-color:white;
+    height:100px;
+    border-radius:10px;
+    text-align:center;
+    font-size:1.3em;
+    align-content:center;
+}
+#daybox0{
+    outline:#007bff solid 2px;
+
 }

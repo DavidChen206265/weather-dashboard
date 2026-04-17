@@ -120,10 +120,10 @@ io.on("connection", (socket) => {
     }
   });
 
+  // get the seven day forecast
   socket.on("get_seven", async () => {
-    let sevenDayForecast = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&daily=temperature_2m_max,temperature_2m_min,weather_code`);
+    let sevenDayForecast = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${currentUserLocation.lat}&longitude=${currentUserLocation.lng}&daily=temperature_2m_max,temperature_2m_min,weather_code`);
     let sevenDayForecastInfo = await sevenDayForecast.json();
-    console.log(sevenDayForecastInfo);
     socket.emit("sevenDayForecast", sevenDayForecastInfo);
   });
 
