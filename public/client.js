@@ -1,5 +1,3 @@
-
-
 const socket = io();
 
 const chatWindow = document.getElementById("chat-window");
@@ -9,7 +7,8 @@ const locationDisplay = document.getElementById("location-display");
 const searchButton = document.getElementById("search-button");
 const currentLocationButton = document.getElementById("current-location-button");
 const placeSelectionBar = document.getElementById("place-selection-bar");
-
+const currentWeatherDisplay = document.getElementById("current-weather-display");
+const todayTemperatureDisplay = document.getElementById("today-temperature-display");
 
 // location
 let userLocation = { lat: 48.4359, lng: -123.3516 };
@@ -33,6 +32,7 @@ const map = new mapboxgl.Map({
 window.onload = (event) => {
   updateCurrentLocation().then(getLocationName(currentUserLocation.lat, currentUserLocation.lng));
   getSevenDayForecast();
+  getCurrentWeather();
 };
 
 async function getSevenDayForecast() {
@@ -86,7 +86,33 @@ socket.on("sevenDayForecast", async (info) => {
     //info.daily.temperature_2m_max[r] <<-- where we can print to the nodes
     //info.daily.temperature_2m_min[r]
     //info.daily.weather_code[r]
+
+    // update todayTemperatureDisplay
+    if (units == "C") {
+      todayTemperatureDisplay.innerText = info.daily.temperature_2m_max[0] + '° | ' + info.daily.temperature_2m_min[0] + '°';
+    } else {
+      todayTemperatureDisplay.innerText = Math.floor((info.daily.temperature_2m_max[0] * 9 / 5) + 32) + '° | ' + Math.floor((info.daily.temperature_2m_min[0] * 9 / 5) + 32) + '°';
+    }
+
   }
+});
+
+socket.on("current_weather_response", async (info) => {
+  console.log("Current Weather:", info.current);
+  let emoji = "";
+  //set background colours based off weather code
+  if (info.current.weather_code == 3) {
+    emoji = "☁️";
+  } else if (info.current.weather_code == 1) {
+    emoji = "☀️";
+  } else if (info.current.weather_code > 50) {
+    emoji = "🌧️";
+  } else {
+    emoji = "☀️";
+  }
+
+  // update currentWeatherDisplay
+  currentWeatherDisplay.innerText = emoji + ' ' + info.current.temperature_2m + '°';
 });
 
 // connected to the server
@@ -141,9 +167,9 @@ socket.on("location_name_response", (locationNameData) => {
     if (Object.hasOwn(locationNameData.address, "city")) {
       locationDisplay.innerText += ('  (' + locationNameData.address.city + ')');
     } else if (Object.hasOwn(locationNameData.address, "county")) {
-      locationDisplay.innerText += ('  ' + locationNameData.address.county + ')');
+      locationDisplay.innerText += ('  (' + locationNameData.address.county + ')');
     } else if (Object.hasOwn(locationNameData.address, "state")) {
-      locationDisplay.innerText += ('  ' + locationNameData.address.state + ')');
+      locationDisplay.innerText += ('  (' + locationNameData.address.state + ')');
     }
   } else {
     console.log('No address available!');
@@ -227,6 +253,9 @@ function selectLocation() {
   // reset selection bar
   placeSelectionBar.innerHTML = '';
   locationInput.value = '';
+
+  // update current weather
+  getCurrentWeather();
 }
 
 function addWeatherMapLayer() {
@@ -307,6 +336,10 @@ function requireWeatherData() {
 // press Enter to search for location
 function checkEnter(e) {
   if (e.key === "Enter") searchLocation();
+}
+
+function getCurrentWeather() {
+  socket.emit('get_current_weather');
 }
 
 function searchLocation() {
