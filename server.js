@@ -134,6 +134,13 @@ io.on("connection", (socket) => {
     socket.emit("sevenDayForecast", sevenDayForecastInfo);
   });
 
+  // get the seven day forecast
+  socket.on("get_current_weather", async () => {
+    let currentWeatherData = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&current=temperature_2m,weather_code`);
+    let currentWeatherResponse = await currentWeatherData.json();
+    socket.emit("current_weather_response", currentWeatherResponse);
+  });
+
   socket.on("send_location", async (location, isCurrent) => {
 
     if (isCurrent) {
