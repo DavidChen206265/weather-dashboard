@@ -33,6 +33,7 @@ body {
 }
 #location-input {
   grid-area: Input;
+  border-radius:4px;
 }
 #search-button {
   grid-area: Button;
@@ -76,22 +77,39 @@ button:hover {
 
 #seven-day-forecast {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 5px;
   margin: 10px;
 }
 .daybox {
   background-color: white;
-  height: 100px;
+  height: 130px;
   border-radius: 10px;
   text-align: center;
   font-size: 1.3em;
   align-content: center;
 }
-#daybox0 {
-  outline: #007bff solid 2px;
-}
 
 #place-selection-cancel {
   background-color: red;
+}
+#layer-controls{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap: 5px;
+  padding:5px;
+}
+
+#tempbtn{
+  background-color:#0056b3;
+}
+#map{
+  border-radius:4px;
+}
+#sevenDayForecastBox{
+  border: 1px solid #ccc;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  margin-top:10px;
+  margin-bottom:10px;
 }

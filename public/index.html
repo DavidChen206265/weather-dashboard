@@ -13,11 +13,7 @@
 
 <body>
 
-    <h2 id="location-display">Victoria</h2>
-
-
-
-    <h2>AI Hello World</h2>
+    
     <h2>Weather App</h2>
     <div id="chat-window">Connecting...</div>
 
@@ -27,11 +23,12 @@
         <input id="location-input" type="text">
         <button id="search-button" onclick="searchLocation()">Search</button>
         <button id="current-location-button" onclick="backToCurrentLocation()">Current Location</button>
+        <h3 id="location-display">Victoria</h3>
     </div>
     <div id="place-selection-bar"></div>
 
     <div Id="sevenDayForecastBox">
-        <h3>Seven day forecast:</h3>
+        <h3>&nbsp; &nbsp;Seven day forecast:</h3>
         <div id="seven-day-forecast">
             <div class="daybox" id="daybox0">0</div>
             <div class="daybox" id="daybox1">1</div>
@@ -40,14 +37,13 @@
             <div class="daybox" id="daybox4">4</div>
             <div class="daybox" id="daybox5">5</div>
             <div class="daybox" id="daybox6">6</div>
-            <div class="daybox" id="refreshdaybox" onclick="getSevenDayForecast()">&#10227</div>
         </div>
     </div>
 
     <div id="map" style="height: 500px; width: 100%;"></div>
     <div id="layer-controls" style="margin-bottom: 10px;">
-        <button onclick="changeWeatherLayer('temp_new')" class="btn btn-primary">Temperature</button>
-        <button onclick="changeWeatherLayer('precipitation_new')" class="btn btn-primary">Precipitation</button>
+        <button onclick="changeWeatherLayer('temp_new')" class="btn btn-primary" id="tempbtn">Temperature</button>
+        <button onclick="changeWeatherLayer('precipitation_new')" class="btn btn-primary" id="rainbtn">Precipitation</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>

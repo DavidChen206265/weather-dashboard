@@ -1,4 +1,4 @@
-require("dotenv").config();
+
 
 const socket = io();
 
@@ -21,7 +21,6 @@ let units = "C";
 
 // weather map
 let initialWeatherConfig = null;
-const MAPBOX_PUBLIC_KEY = process.env.MAPBOX_PUBLIC_KEY;
 
 mapboxgl.accessToken = 'pk.eyJ1IjoiZGF2aWRjaGVuMjA2MjY1IiwiYSI6ImNtbWI1OXZ3ZTBmbnAycXBybHBlMnV3dDIifQ.1kx9xZYECXeQpEP-J7EKXA';
 const map = new mapboxgl.Map({
@@ -41,8 +40,25 @@ async function getSevenDayForecast() {
   socket.emit("get_seven");
 }
 
+let days = ["Sun", "Mon", "Tues", "Wed", "Thurs", "Fri", "Sat"];
+
 socket.on("sevenDayForecast", async (info) => {
+  let today = new Date();
+  let dayoftheweek = today.getDay();
+  let printedday = "";
   for (let r = 0; r < 7; r++) {
+    
+    if(r == 0){
+      printedday = "Now";
+      dayoftheweek++;
+    }else{
+      printedday = days[dayoftheweek];
+      dayoftheweek++;
+    }
+    if(dayoftheweek == 7){
+      dayoftheweek = 0;
+    };
+
     let emoji = "";
     //set background colours based off weather code
     document.getElementById("daybox" + r).style.color = "#000";
@@ -62,9 +78,9 @@ socket.on("sevenDayForecast", async (info) => {
     }
     //set Inner text with values
     if (units == "C") {
-      document.getElementById("daybox" + r).innerHTML = emoji + "<br>" + info.daily.temperature_2m_max[r] + "°C<br>" + info.daily.temperature_2m_min[r] + "°C"
+      document.getElementById("daybox" + r).innerHTML = printedday + "<br>" + emoji + "<br>" + info.daily.temperature_2m_max[r] + "°C&uarr;<br>" + info.daily.temperature_2m_min[r] + "°C&darr;"
     } else {
-      document.getElementById("daybox" + r).innerHTML = emoji + "<br>" + Math.floor((info.daily.temperature_2m_max[r] * 9 / 5) + 32) + "°F<br>" + Math.floor((info.daily.temperature_2m_min[r] * 9 / 5) + 32) + "°F"
+      document.getElementById("daybox" + r).innerHTML = printedday + "<br>" + emoji + "<br>" + Math.floor((info.daily.temperature_2m_max[r] * 9 / 5) + 32) + "°F&uarr;<br>" + Math.floor((info.daily.temperature_2m_min[r] * 9 / 5) + 32) + "°F&darr;"
     }
 
     //info.daily.temperature_2m_max[r] <<-- where we can print to the nodes
@@ -232,6 +248,9 @@ function addWeatherMapLayer() {
   });
 }
 
+const tempButton = document.getElementById("tempbtn")
+const rainButton = document.getElementById("rainbtn")
+
 function changeWeatherLayer(newLayerType) {
   // remove existing layers
   if (map.getLayer('weather-layer')) {
@@ -249,6 +268,14 @@ function changeWeatherLayer(newLayerType) {
     ],
     'tileSize': 256
   });
+
+  if(newLayerType == 'temp_new'){
+    tempButton.style.backgroundColor = "#0056b3";
+    rainButton.style.backgroundColor = "#007bff";
+  }else{
+    tempButton.style.backgroundColor = "#007bff";
+    rainButton.style.backgroundColor = "#0056b3";
+  };
 
   // rerender
   map.addLayer({
@@ -352,6 +379,7 @@ function switchUnits() {
     unitButton.innerHTML = "°C";
   }
   console.log("Units:" + units);
+  getSevenDayForecast();
 }
 
 function backToCurrentLocation() {
