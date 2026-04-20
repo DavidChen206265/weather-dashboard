@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather App</title>
     <link rel="stylesheet" href="/style.css">
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
 </head>
+
 <body>
 
     <h2 id="location-display">Victoria</h2>
 
-    
+
 
     <h2>AI Hello World</h2>
     <h2>Weather App</h2>
@@ -38,7 +43,15 @@
             <div class="daybox" id="refreshdaybox" onclick="getSevenDayForecast()">&#10227</div>
         </div>
     </div>
+
+    <div id="map" style="height: 500px; width: 100%;"></div>
+    <div id="layer-controls" style="margin-bottom: 10px;">
+        <button onclick="changeWeatherLayer('temp_new')" class="btn btn-primary">Temperature</button>
+        <button onclick="changeWeatherLayer('precipitation_new')" class="btn btn-primary">Precipitation</button>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="/client.js"></script>
 </body>
+
 </html>

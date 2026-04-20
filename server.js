@@ -2,7 +2,11 @@ require("dotenv").config();
 const { log } = require("console");
 const express = require("express");
 const http = require("http");
+const https = require('https');
 const { Server } = require("socket.io");
+const axios = require('axios');
+const path = require('path');
+require('events').EventEmitter.defaultMaxListeners = 50;
 
 const app = express();
 const server = http.createServer(app);
@@ -21,10 +25,22 @@ const MODEL_ID = "gpt-oss-20b";
 // keys
 const AI_API_KEY = process.env.AI_API_KEY;
 const GEO_API_KEY = process.env.GEO_API_KEY;
+const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
+
+const mapboxAgent = new https.Agent({ 
+    keepAlive: true, 
+    maxSockets: 50 
+});
 
 // after a client connected
 io.on("connection", (socket) => {
   console.log("A client has connected.");
+
+  // weather map settings
+  socket.emit('weather-config', {
+    layer: 'temp_new',
+    opacity: 0.6
+  });
 
   // ask AI
   socket.on("require_weather_data", async (units) => {
@@ -99,21 +115,12 @@ io.on("connection", (socket) => {
   socket.on("require_location_name", async (lat, lng) => {
     try {
 
-      console.log('test input: ' + lat + ' ' + lng );
-      
-
-      // send back the waiting status
-      // socket.emit("location_name_response", "Waiting...");
-
       let locationNameResponse = await fetch(`https://us1.locationiq.com/v1/reverse?key=${GEO_API_KEY}&lat=${lat}&lon=${lng}&format=json`);
-      console.log(userLocation.lat + "," + userLocation.lng);
       let locationNameData = await locationNameResponse.json();
 
       // send back the response
       socket.emit("location_name_response", locationNameData);
 
-      console.log(`test location name: ${locationNameData}`);
-      
     } catch (error) {
       console.error("API error:", error);
       socket.emit("location_name_response", `[Error]: ${error.message}`);
@@ -122,7 +129,7 @@ io.on("connection", (socket) => {
 
   // get the seven day forecast
   socket.on("get_seven", async () => {
-    let sevenDayForecast = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${currentUserLocation.lat}&longitude=${currentUserLocation.lng}&daily=temperature_2m_max,temperature_2m_min,weather_code`);
+    let sevenDayForecast = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&daily=temperature_2m_max,temperature_2m_min,weather_code`);
     let sevenDayForecastInfo = await sevenDayForecast.json();
     socket.emit("sevenDayForecast", sevenDayForecastInfo);
   });
@@ -147,7 +154,6 @@ io.on("connection", (socket) => {
 
       console.log('User searches for: ' + searchText);
 
-
       // send back the waiting status
       socket.emit("location_response", "Waiting...");
 
@@ -168,6 +174,26 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("A client has disconnected.");
   });
+});
+
+// weather map proxy
+app.get('/weather-proxy/:layer/:z/:x/:y', async (req, res) => {
+  const { layer, z, x, y } = req.params;
+  const url = `https://tile.openweathermap.org/map/${layer}/${z}/${x}/${y}.png?appid=${OPENWEATHER_API_KEY}`;
+
+  try {
+    const response = await axios({
+      url,
+      method: 'GET',
+      responseType: 'stream',
+      httpsAgent: mapboxAgent,
+    });
+
+    res.setHeader('Content-Type', response.headers['content-type']);
+    response.data.pipe(res);
+  } catch (error) {
+    res.status(500).send('Error fetching tile');
+  }
 });
 
 const PORT = process.env.PORT || 3000;

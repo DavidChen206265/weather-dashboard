@@ -1,93 +1,97 @@
 body {
-    font-family: system-ui, sans-serif;
-    max-width: 600px;
-    margin: 40px auto;
-    padding: 20px;
+  font-family: system-ui, sans-serif;
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
 }
 
 #chat-window {
-    height: 400px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 15px;
-    overflow-y: auto;
-    background: #f9f9f9;
-    margin-bottom: 15px;
-    white-space: pre-wrap;
-    line-height: 1.5;
+  height: 400px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 15px;
+  overflow-y: auto;
+  background: #f9f9f9;
+  margin-bottom: 15px;
+  white-space: pre-wrap;
+  line-height: 1.5;
 }
 
 .input-group {
-    display: grid;
-    grid-template-areas: "AI AI AI AI AI AI AI Units"
+  display: grid;
+  grid-template-areas:
+    "AI AI AI AI AI AI AI Units"
     "Input Input Input Input Input Input Button Button";
-    gap: 10px;
+  gap: 10px;
 }
 
-#AIrequest{
-    grid-area:AI;
+#AIrequest {
+  grid-area: AI;
 }
-#unitsButton{
-    grid-area:Units;
+#unitsButton {
+  grid-area: Units;
 }
-#location-input{
-    grid-area:Input;
+#location-input {
+  grid-area: Input;
 }
-#search-button{
-    grid-area:Button;
+#search-button {
+  grid-area: Button;
 }
 
 button {
-    padding: 10px 20px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    width:100%;
+  padding: 10px 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  width: 100%;
 }
 
 button:hover {
-    background: #0056b3;
+  background: #0056b3;
 }
 #refreshdaybox {
-    background-color: #007bff;
-    color:white;
-    align-content:center;
-    font-weight:900;
+  background-color: #007bff;
+  color: white;
+  align-content: center;
+  font-weight: 900;
 }
 #refreshdaybox:hover {
-    background-color:#0056b3;
+  background-color: #0056b3;
 }
 
 .msg-user {
-    color: #0056b3;
-    margin-top: 10px;
+  color: #0056b3;
+  margin-top: 10px;
 }
 
 .msg-ai {
-    color: #333;
-    margin-bottom: 10px;
-    border-bottom: 1px dashed #ddd;
-    padding-bottom: 10px;
+  color: #333;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #ddd;
+  padding-bottom: 10px;
 }
 
-#seven-day-forecast{
-    display:grid;
-    grid-template-columns:repeat(8, 1fr);
-    gap:5px;
-    margin:10px;
+#seven-day-forecast {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 5px;
+  margin: 10px;
 }
 .daybox {
-    background-color:white;
-    height:100px;
-    border-radius:10px;
-    text-align:center;
-    font-size:1.3em;
-    align-content:center;
+  background-color: white;
+  height: 100px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 1.3em;
+  align-content: center;
 }
-#daybox0{
-    outline:#007bff solid 2px;
+#daybox0 {
+  outline: #007bff solid 2px;
+}
 
+#place-selection-cancel {
+  background-color: red;
 }
