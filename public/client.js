@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const socket = io();
 
 const chatWindow = document.getElementById("chat-window");
@@ -17,42 +19,54 @@ let locationSearchingData = '';
 
 let units = "C";
 
+// weather map
+let initialWeatherConfig = null;
+const MAPBOX_PUBLIC_KEY = process.env.MAPBOX_PUBLIC_KEY;
+
+mapboxgl.accessToken = 'pk.eyJ1IjoiZGF2aWRjaGVuMjA2MjY1IiwiYSI6ImNtbWI1OXZ3ZTBmbnAycXBybHBlMnV3dDIifQ.1kx9xZYECXeQpEP-J7EKXA';
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/light-v11',
+  center: [userLocation.lng, userLocation.lat],
+  zoom: 9
+});
+
 window.onload = (event) => {
   updateCurrentLocation().then(getLocationName(currentUserLocation.lat, currentUserLocation.lng));
   getSevenDayForecast();
 };
 
 async function getSevenDayForecast() {
-  sendUserLocation(true);
-  socket.emit("get_seven") 
-  
+  sendUserLocation();
+  socket.emit("get_seven");
 }
+
 socket.on("sevenDayForecast", async (info) => {
-  for(let r = 0; r < 7; r++){
+  for (let r = 0; r < 7; r++) {
     let emoji = "";
     //set background colours based off weather code
     document.getElementById("daybox" + r).style.color = "#000";
-    if(info.daily.weather_code[r] == 3){
+    if (info.daily.weather_code[r] == 3) {
       document.getElementById("daybox" + r).style.backgroundColor = "#BBB";
       emoji = "☁️";
-    }else if(info.daily.weather_code[r] == 1){
+    } else if (info.daily.weather_code[r] == 1) {
       document.getElementById("daybox" + r).style.backgroundColor = "#87CEEB";
       emoji = "☀️";
-    }else if(info.daily.weather_code[r] > 50){
+    } else if (info.daily.weather_code[r] > 50) {
       document.getElementById("daybox" + r).style.backgroundColor = "#29395b";
       document.getElementById("daybox" + r).style.color = "#FFF";
       emoji = "🌧️";
-    }else{
+    } else {
       document.getElementById("daybox" + r).style.backgroundColor = "#87CEEB";
       emoji = "☀️";
     }
     //set Inner text with values
-    if(units == "C"){
+    if (units == "C") {
       document.getElementById("daybox" + r).innerHTML = emoji + "<br>" + info.daily.temperature_2m_max[r] + "°C<br>" + info.daily.temperature_2m_min[r] + "°C"
-    }else{
+    } else {
       document.getElementById("daybox" + r).innerHTML = emoji + "<br>" + Math.floor((info.daily.temperature_2m_max[r] * 9 / 5) + 32) + "°F<br>" + Math.floor((info.daily.temperature_2m_min[r] * 9 / 5) + 32) + "°F"
     }
-    
+
     //info.daily.temperature_2m_max[r] <<-- where we can print to the nodes
     //info.daily.temperature_2m_min[r]
     //info.daily.weather_code[r]
@@ -65,6 +79,20 @@ socket.on("connect", async () => {
     '<div style="color: green;">System: Connected to the server.</div>';
 
   sendUserLocation(true);
+});
+
+socket.on('weather-config', (config) => {
+  initialWeatherConfig = config;
+
+  if (map.loaded()) {
+    addWeatherMapLayer();
+  }
+});
+
+map.on('load', () => {
+  if (initialWeatherConfig) {
+    addWeatherMapLayer();
+  }
 });
 
 // listen for AI response from server
@@ -83,31 +111,27 @@ socket.on("ai_response", (msg) => {
 // listen for location name response
 socket.on("location_name_response", (locationNameData) => {
 
-  console.log('Location Name Data: ' + locationNameData);
-  
+  console.log('Location Name Data: ' + JSON.stringify(locationNameData));
+
+  // display location name
   locationDisplay.innerText = '';
 
   if (Object.hasOwn(locationNameData, "address")) {
     if (Object.hasOwn(locationNameData.address, "suburb")) {
-      locationDisplay.innerText += (locationNameData.address.suburb + ', ');
-
-    } 
-    if (Object.hasOwn(locationNameData.address, "neighborhood")) {
-      locationDisplay.innerText += (locationNameData.address.neighborhood + ', ');
-    } 
+      locationDisplay.innerText += (locationNameData.address.suburb);
+    } else if (Object.hasOwn(locationNameData.address, "neighbourhood")) {
+      locationDisplay.innerText += (locationNameData.address.neighbourhood);
+    }
     if (Object.hasOwn(locationNameData.address, "city")) {
-      locationDisplay.innerText += (locationNameData.address.city + ', ');
-    } 
-    if (Object.hasOwn(locationNameData.address, "county")) {
-      locationDisplay.innerText += (locationNameData.address.county + ', ');
-    } 
-    if (Object.hasOwn(locationNameData.address, "state")) {
-      locationDisplay.innerText += (locationNameData.address.state);
-    } 
+      locationDisplay.innerText += ('  (' + locationNameData.address.city + ')');
+    } else if (Object.hasOwn(locationNameData.address, "county")) {
+      locationDisplay.innerText += ('  ' + locationNameData.address.county + ')');
+    } else if (Object.hasOwn(locationNameData.address, "state")) {
+      locationDisplay.innerText += ('  ' + locationNameData.address.state + ')');
+    }
   } else {
     console.log('No address available!');
   }
-
 })
 
 // listen for location searching response
@@ -115,15 +139,16 @@ socket.on("location_response", (msg) => {
 
   locationData = '';
 
-  if (msg === "Waiting...") {
-    placeSelectionBar.innerHTML = '';
-  } else if (msg.length === 0) {
+  if (msg.length === 0) {
     placeSelectionBar.innerHTML = 'No Results Found';
+  } else if (msg === 'Waiting...') {
+    placeSelectionBar.innerHTML = 'Searching...';
   } else if (msg.error) {
     placeSelectionBar.innerHTML = 'No Results Found';
   } else {
 
     // if the data is valid
+    placeSelectionBar.innerHTML = '';
 
     locationSearchingData = msg;
     let place;
@@ -131,34 +156,112 @@ socket.on("location_response", (msg) => {
       place = msg[i];
       placeSelectionBar.innerHTML += `<div class="place-selection" id="${place.lat},${place.lon}">${place.display_name}</div>`;
     }
+    placeSelectionBar.innerHTML += `<div class="place-selection" id="place-selection-cancel">Cancel</div>`;
 
-    // add eventlisteners
+
+    // add eventListeners
     for (let t = 0; t < msg.length; t++) {
       place = msg[t];
 
-      document.getElementById(place.lat + "," + place.lon).addEventListener("click", function selectLocation() {
-        let position = this.id.split(",");
-        console.log(position);
+      document.getElementById(place.lat + "," + place.lon).addEventListener("click", selectLocation);
 
-        // set userLocation
-        userLocation.lat = position[0];
-        userLocation.lng = position[1];
-
-        // update location name
-        getLocationName(userLocation.lat, userLocation.lng);
-
-        console.log("lat:" + userLocation.lat + " long:" + userLocation.lng);
-        console.log(``);
-        for (let j = 0; j < locationSearchingData.length; j++) {
-          document.getElementById(locationSearchingData[j].lat + "," + locationSearchingData[j].lon).removeEventListener("click", selectLocation);
-        }
-        placeSelectionBar.innerHTML = '';
-        locationInput.value = '';
-      });
+      // add eventListener for cancel 
+      document.getElementById('place-selection-cancel').addEventListener("click", cancelSelection);
 
     }
   }
 });
+
+function cancelSelection() {
+
+  // remove eventListeners
+  for (let j = 0; j < locationSearchingData.length; j++) {
+    document.getElementById(locationSearchingData[j].lat + "," + locationSearchingData[j].lon).removeEventListener("click", selectLocation);
+  }
+  document.getElementById('place-selection-cancel').removeEventListener("click", cancelSelection);
+
+  // reset selection bar
+  placeSelectionBar.innerHTML = '';
+  locationInput.value = '';
+}
+
+function selectLocation() {
+  let position = this.id.split(",");
+  console.log(position);
+
+  // set userLocation
+  userLocation.lat = position[0];
+  userLocation.lng = position[1];
+
+  // update map center
+  map.flyTo({ center: [userLocation.lng, userLocation.lat] });
+
+  // update seven day forecast
+  getSevenDayForecast();
+
+  // update location name
+  getLocationName(userLocation.lat, userLocation.lng);
+
+  // remove eventListeners
+  for (let j = 0; j < locationSearchingData.length; j++) {
+    document.getElementById(locationSearchingData[j].lat + "," + locationSearchingData[j].lon).removeEventListener("click", selectLocation);
+  }
+  document.getElementById('place-selection-cancel').removeEventListener("click", cancelSelection);
+
+  // reset selection bar
+  placeSelectionBar.innerHTML = '';
+  locationInput.value = '';
+}
+
+function addWeatherMapLayer() {
+  if (map.getSource('weather-source')) return;
+
+  map.addSource('weather-source', {
+    'type': 'raster',
+    'tiles': [
+      `${window.location.origin}/weather-proxy/${initialWeatherConfig.layer}/{z}/{x}/{y}`
+    ],
+    'tileSize': 256
+  });
+
+  map.addLayer({
+    'id': 'weather-layer',
+    'type': 'raster',
+    'source': 'weather-source',
+    'paint': { 'raster-opacity': initialWeatherConfig.opacity }
+  });
+}
+
+function changeWeatherLayer(newLayerType) {
+  // remove existing layers
+  if (map.getLayer('weather-layer')) {
+    map.removeLayer('weather-layer');
+  }
+  if (map.getSource('weather-source')) {
+    map.removeSource('weather-source');
+  }
+
+  // add new layer
+  map.addSource('weather-source', {
+    'type': 'raster',
+    'tiles': [
+      `${window.location.origin}/weather-proxy/${newLayerType}/{z}/{x}/{y}`
+    ],
+    'tileSize': 256
+  });
+
+  // rerender
+  map.addLayer({
+    'id': 'weather-layer',
+    'type': 'raster',
+    'source': 'weather-source',
+    'paint': {
+      'raster-opacity': initialWeatherConfig ? initialWeatherConfig.opacity : 0.6
+    }
+  });
+
+  console.log(`Change layer to: ${newLayerType}`);
+}
 
 // send message to server
 function requireWeatherData() {
@@ -214,6 +317,8 @@ function sendUserLocation(isCurrent = false) {
 function updateCurrentLocation() {
 
   return new Promise((resolve, reject) => {
+
+    // get user location
     navigator.geolocation.getCurrentPosition(
       (position) => {
 
@@ -224,8 +329,12 @@ function updateCurrentLocation() {
 
         resolve();
       },
-      (error) => {
-        console.error(error);
+      (err) => {
+        if (err.code === 1) {
+          console.warn("User denied Location permissions.");
+        } else if (err.code === 2) {
+          console.warn("Location unavailable (CoreLocation error). Check Wi-Fi/System settings.");
+        }
         reject(error);
       },
       { enableHighAccuracy: true, timeout: 10000 },
@@ -246,6 +355,15 @@ function switchUnits() {
 }
 
 function backToCurrentLocation() {
+
+  // update current location
   updateCurrentLocation().then(getLocationName(currentUserLocation.lat, currentUserLocation.lng));
+  userLocation = currentUserLocation;
   sendUserLocation(true);
+
+  // update map
+  map.flyTo({ center: [userLocation.lng, userLocation.lat] });
+
+  // update seven day forecast
+  getSevenDayForecast();
 }
