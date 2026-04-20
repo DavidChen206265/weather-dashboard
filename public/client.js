@@ -23,7 +23,7 @@ let units = "C";
 let initialWeatherConfig = null;
 const MAPBOX_PUBLIC_KEY = process.env.MAPBOX_PUBLIC_KEY;
 
-mapboxgl.accessToken = CHANGE_THIS;
+mapboxgl.accessToken = 'pk.eyJ1IjoiZGF2aWRjaGVuMjA2MjY1IiwiYSI6ImNtbWI1OXZ3ZTBmbnAycXBybHBlMnV3dDIifQ.1kx9xZYECXeQpEP-J7EKXA';
 const map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/mapbox/light-v11',
