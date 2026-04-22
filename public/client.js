@@ -61,19 +61,17 @@ socket.on("sevenDayForecast", async (info) => {
 
     let emoji = "";
     //set background colours based off weather code
-    document.getElementById("daybox" + r).style.color = "#000";
     if (info.daily.weather_code[r] == 3) {
-      document.getElementById("daybox" + r).style.backgroundColor = "#BBB";
+      
       emoji = "☁️";
     } else if (info.daily.weather_code[r] == 1) {
-      document.getElementById("daybox" + r).style.backgroundColor = "#87CEEB";
+      
       emoji = "☀️";
     } else if (info.daily.weather_code[r] > 50) {
-      document.getElementById("daybox" + r).style.backgroundColor = "#29395b";
-      document.getElementById("daybox" + r).style.color = "#FFF";
+      
       emoji = "🌧️";
     } else {
-      document.getElementById("daybox" + r).style.backgroundColor = "#87CEEB";
+      
       emoji = "☀️";
     }
     //set Inner text with values
