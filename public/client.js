@@ -9,6 +9,7 @@ const currentLocationButton = document.getElementById("current-location-button")
 const placeSelectionBar = document.getElementById("place-selection-bar");
 const currentWeatherDisplay = document.getElementById("current-weather-display");
 const todayTemperatureDisplay = document.getElementById("today-temperature-display");
+const hourlyForecastBox = document.getElementById("hourlyForecastBox");
 
 // location
 let userLocation = { lat: 48.4359, lng: -123.3516 };
@@ -32,6 +33,7 @@ const map = new mapboxgl.Map({
 window.onload = (event) => {
   updateCurrentLocation().then(getLocationName(currentUserLocation.lat, currentUserLocation.lng));
   getSevenDayForecast();
+  getHourlyForecast();
   getCurrentWeather();
 };
 
@@ -47,15 +49,15 @@ socket.on("sevenDayForecast", async (info) => {
   let dayoftheweek = today.getDay();
   let printedday = "";
   for (let r = 0; r < 7; r++) {
-    
-    if(r == 0){
+
+    if (r == 0) {
       printedday = "Today";
       dayoftheweek++;
-    }else{
+    } else {
       printedday = days[dayoftheweek];
       dayoftheweek++;
     }
-    if(dayoftheweek == 7){
+    if (dayoftheweek == 7) {
       dayoftheweek = 0;
     };
 
@@ -101,9 +103,9 @@ socket.on("current_weather_response", async (info) => {
   console.log("Current Weather:", info.current);
   let emoji = "";
   //set background colours based off weather code
-  if (info.current.weather_code == 3) {
+  if (info.current.weather_code == 3 || info.current.weather_code == 2 || info.current.weather_code == 1) {
     emoji = "☁️";
-  } else if (info.current.weather_code == 1) {
+  } else if (info.current.weather_code == 0) {
     emoji = "☀️";
   } else if (info.current.weather_code > 50) {
     emoji = "🌧️";
@@ -113,7 +115,7 @@ socket.on("current_weather_response", async (info) => {
 
   // use correct unit
   let shownTemperature = info.current.temperature_2m;
-  if (units === 'F') shownTemperature = Math.floor((info.current.temperature_2m * 9 / 5) + 32)
+  if (units === 'F') shownTemperature = Math.floor((info.current.temperature_2m * 9 / 5) + 32);
 
   // update currentWeatherDisplay
   currentWeatherDisplay.innerText = emoji + ' ' + shownTemperature + '°';
@@ -141,15 +143,74 @@ map.on('load', () => {
   }
 });
 
+socket.on('hourly_forecast_response', (info) => {
+  hourlyForecastBox.innerHTML = '';
+
+  let emoji = "";
+  let shownTemperature = 0;
+  let shownDate;
+  let localDay;
+  let currentDay;
+  let localDate = new Date().toLocaleString('en-US', { hour12: false });
+  localDay = localDate.split(',')[0];
+  localDate = localDate.substring(localDate.length - 8, localDate.length - 3);
+  console.log('Local date: ' + localDate); // Displays the full local date and time string
+
+
+  // add hourly data
+  for (let i = 0; i < 48; i++) {    
+
+    // convert time
+    shownDate = info.hourly.time[i];
+    shownDate = new Date(shownDate + "Z").toLocaleString('en-US', { hour12: false });
+    currentDay = shownDate.split(',')[0];
+    shownDate = shownDate.substring(shownDate.length - 8, shownDate.length - 3);
+
+    // only show current & later weather 
+    if (localDay === currentDay && localDate.substring(0, localDate.length - 3) === shownDate.substring(0, shownDate.length - 3)) {
+      hourlyForecastBox.innerHTML = '';
+      shownDate = 'Now';
+    }
+
+    //set weather code emojis
+    if (info.hourly.weather_code[i] == 3 || info.hourly.weather_code[i] == 2) {
+      emoji = "☁️";
+    } else if (info.hourly.weather_code[i] == 1) {
+      emoji = "☀️";
+    } else if (info.hourly.weather_code[i] > 50) {
+      emoji = "🌧️";
+    } else {
+      emoji = "☀️";
+    }
+
+    // use correct unit
+    shownTemperature = info.hourly.temperature_2m[i];
+    if (units === 'F') shownTemperature = Math.floor((shownTemperature * 9 / 5) + 32);
+
+    hourlyForecastBox.innerHTML += `
+            <div class="forecast-item">
+                <span class="temp">${shownTemperature}°</span>
+                <span class="icon">${emoji}</span>
+                <span class="wind">${info.hourly.wind_speed_10m[i]}m/s</span>
+                <span class="time">${shownDate}</span>
+            </div>`;
+
+  }
+
+
+
+
+});
+
 // listen for AI response from server
 socket.on("ai_response", (msg) => {
 
   if (msg === "Waiting...") {
-    chatWindow.innerHTML += `<div class="msg-ai" id="loading"><strong>AI:</strong> ${msg}</div>`;
+    chatWindow.innerHTML += `<div div class="msg-ai" id = "loading" > <strong>AI:</strong> ${msg}</div > `;
   } else {
     const loadingNode = document.getElementById("loading");
     if (loadingNode) loadingNode.remove(); // remove loading sign
-    chatWindow.innerHTML += `<div class="msg-ai"><strong>AI:</strong> ${msg}</div>`;
+    chatWindow.innerHTML += `<div div class="msg-ai" > <strong>AI:</strong> ${msg}</div > `;
   }
   chatWindow.scrollTop = chatWindow.scrollHeight;
 });
@@ -200,9 +261,9 @@ socket.on("location_response", (msg) => {
     let place;
     for (let i = 0; i < msg.length; i++) {
       place = msg[i];
-      placeSelectionBar.innerHTML += `<div class="place-selection" id="${place.lat},${place.lon}">${place.display_name}</div>`;
+      placeSelectionBar.innerHTML += `<div div class="place-selection" id = "${place.lat},${place.lon}" > ${place.display_name}</div > `;
     }
-    placeSelectionBar.innerHTML += `<div class="place-selection" id="place-selection-cancel">Cancel</div>`;
+    placeSelectionBar.innerHTML += `<div div class="place-selection" id = "place-selection-cancel" > Cancel</div > `;
 
 
     // add eventListeners
@@ -242,8 +303,9 @@ function selectLocation() {
   // update map center
   map.flyTo({ center: [userLocation.lng, userLocation.lat] });
 
-  // update seven day forecast
+  // update seven day & 24 hour forecast
   getSevenDayForecast();
+  getHourlyForecast();
 
   // update location name
   getLocationName(userLocation.lat, userLocation.lng);
@@ -302,10 +364,10 @@ function changeWeatherLayer(newLayerType) {
     'tileSize': 256
   });
 
-  if(newLayerType == 'temp_new'){
+  if (newLayerType == 'temp_new') {
     tempButton.style.backgroundColor = "#0056b3";
     rainButton.style.backgroundColor = "#007bff";
-  }else{
+  } else {
     tempButton.style.backgroundColor = "#007bff";
     rainButton.style.backgroundColor = "#0056b3";
   };
