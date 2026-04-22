@@ -49,7 +49,7 @@ socket.on("sevenDayForecast", async (info) => {
   for (let r = 0; r < 7; r++) {
     
     if(r == 0){
-      printedday = "Now";
+      printedday = "Today";
       dayoftheweek++;
     }else{
       printedday = days[dayoftheweek];
@@ -111,8 +111,12 @@ socket.on("current_weather_response", async (info) => {
     emoji = "☀️";
   }
 
+  // use correct unit
+  let shownTemperature = info.current.temperature_2m;
+  if (units === 'F') shownTemperature = Math.floor((info.current.temperature_2m * 9 / 5) + 32)
+
   // update currentWeatherDisplay
-  currentWeatherDisplay.innerText = emoji + ' ' + info.current.temperature_2m + '°';
+  currentWeatherDisplay.innerText = emoji + ' ' + shownTemperature + '°';
 });
 
 // connected to the server
@@ -357,7 +361,6 @@ function searchLocation() {
 
   // send search request
   socket.emit("search_for_location", searchText);
-
 }
 
 function getLocationName(lat, lng) {
@@ -413,6 +416,13 @@ function switchUnits() {
   }
   console.log("Units:" + units);
   getSevenDayForecast();
+  getHourlyForecast();
+  getCurrentWeather();
+}
+
+function getHourlyForecast() {
+
+  socket.emit('require_hourly_forecast');
 }
 
 function backToCurrentLocation() {
