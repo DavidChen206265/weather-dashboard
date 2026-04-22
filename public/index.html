@@ -12,21 +12,14 @@
 </head>
 
 <body>
-
     <h3 id="location-display">Victoria</h3>
-
     <h1 id="current-weather-display">☀️ 14°</h1>
     <h3 id="today-temperature-display">20° | 8°</h3>
 
-    <div id="chat-window">Connecting...</div>
-
-    <div class="input-group">
-        <button onclick="requireWeatherData()" id="AIrequest">Request Current Weather</button>
-        <button onclick="switchUnits()" id="unitsButton">°C</button>
+    <div id="searchbox">
         <input id="location-input" type="text">
         <button id="search-button" onclick="searchLocation()">Search</button>
         <button id="current-location-button" onclick="backToCurrentLocation()">Current Location</button>
-        <h3 id="location-display">Victoria</h3>
     </div>
     <div id="place-selection-bar"></div>
 
@@ -34,14 +27,16 @@
 
     <div id="sevenDayForecastBox">
         <span class="widget-header">&nbsp; &nbsp;7 day forecast:</span>
-        <div id="seven-day-forecast">
-            <div class="daybox" id="daybox0">0</div>
-            <div class="daybox" id="daybox1">1</div>
-            <div class="daybox" id="daybox2">2</div>
-            <div class="daybox" id="daybox3">3</div>
-            <div class="daybox" id="daybox4">4</div>
-            <div class="daybox" id="daybox5">5</div>
-            <div class="daybox" id="daybox6">6</div>
+        <div class="scroll-container" id="removepadding">
+            <div id="seven-day-forecast">
+                <div class="daybox" id="daybox0">0</div>
+                <div class="daybox" id="daybox1">1</div>
+                <div class="daybox" id="daybox2">2</div>
+                <div class="daybox" id="daybox3">3</div>
+                <div class="daybox" id="daybox4">4</div>
+                <div class="daybox" id="daybox5">5</div>
+                <div class="daybox" id="daybox6">6</div>
+            </div>
         </div>
     </div>
 
@@ -102,6 +97,17 @@
             </div>
         </div>
     </div>
+
+    <br>
+
+    <div id="chat-window">Connecting...</div>
+
+    <div class="input-group">
+        <button onclick="requireWeatherData()" id="AIrequest">Request Current Weather</button>
+        <button onclick="switchUnits()" id="unitsButton">°C</button>
+    </div>
+
+    <br>
 
     <div id="map" style="height: 500px; width: 100%;"></div>
     <div id="layer-controls" style="margin-bottom: 10px;">
