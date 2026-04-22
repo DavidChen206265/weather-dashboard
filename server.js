@@ -42,6 +42,8 @@ io.on("connection", (socket) => {
     opacity: 0.6
   });
 
+
+
   // ask AI
   socket.on("require_weather_data", async (units) => {
     try {
@@ -51,7 +53,7 @@ io.on("connection", (socket) => {
       const now = new Date();
       const hour = now.getHours();
 
-      let weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&hourly=temperature_2m,wind_speed_10m,precipitation,precipitation_probability&forecast_days=1`);
+      let weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&hourly=temperature_2m,wind_speed_10m,precipitation,precipitation_probability&forecast_days=2`);
       console.log(userLocation.lat + "," + userLocation.lng);
       let weatherData = await weatherResponse.json();
       let currentTemp = await weatherData.hourly.temperature_2m[hour];
@@ -139,6 +141,17 @@ io.on("connection", (socket) => {
     let currentWeatherData = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&current=temperature_2m,weather_code`);
     let currentWeatherResponse = await currentWeatherData.json();
     socket.emit("current_weather_response", currentWeatherResponse);
+  });
+
+  // get the 24 hour forecast
+  socket.on("require_hourly_forecast", async () => {
+    let hourlyData = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&hourly=temperature_2m,weather_code,wind_speed_10m&past_days=0&forecast_days=2`);
+    let hourlyResponse = await hourlyData.json();
+    socket.emit("hourly_forecast_response", hourlyResponse);
+
+    // test
+    console.log('hourly forecast: ' + JSON.stringify(hourlyResponse));
+    
   });
 
   socket.on("send_location", async (location, isCurrent) => {
