@@ -30,8 +30,10 @@
     </div>
     <div id="place-selection-bar"></div>
 
-    <div Id="sevenDayForecastBox">
-        <h3>&nbsp; &nbsp;Seven day forecast:</h3>
+    <br>
+
+    <div id="sevenDayForecastBox">
+        <span class="widget-header">&nbsp; &nbsp;7 day forecast:</span>
         <div id="seven-day-forecast">
             <div class="daybox" id="daybox0">0</div>
             <div class="daybox" id="daybox1">1</div>
@@ -43,10 +45,69 @@
         </div>
     </div>
 
+    <br>
+
+    <div class="weather-widget">
+        <div class="widget-header">
+            <span>24-hour forecast</span>
+        </div>
+
+        <div class="scroll-container">
+
+            <div class="forecast-item">
+                <span class="temp">12°</span>
+                <span class="icon">⛅</span>
+                <span class="wind">0.5 m/s</span>
+                <span class="time">Now</span>
+            </div>
+
+            <div class="forecast-item">
+                <span class="temp">13°</span>
+                
+                <span class="icon">🌧️</span>
+                <span class="wind">1.9 m/s</span>
+                <span class="time">10:00</span>
+            </div>
+
+            <div class="forecast-item">
+                <span class="temp">14°</span>
+                
+                <span class="icon">⛅</span>
+                <span class="wind">2.6 m/s</span>
+                <span class="time">11:00</span>
+            </div>
+
+            <div class="forecast-item">
+                <span class="temp">14°</span>
+                
+                <span class="icon">⛅</span>
+                <span class="wind">2.6 m/s</span>
+                <span class="time">12:00</span>
+            </div>
+
+            <div class="forecast-item">
+                <span class="temp">14°</span>
+                
+                <span class="icon">⛅</span>
+                <span class="wind">2.3 m/s</span>
+                <span class="time">13:00</span>
+            </div>
+
+            <div class="forecast-item">
+                <span class="temp">15°</span>
+                
+                <span class="icon">⛅</span>
+                <span class="wind">2.3 m/s</span>
+                <span class="time">14:00</span>
+            </div>
+        </div>
+    </div>
+
     <div id="map" style="height: 500px; width: 100%;"></div>
     <div id="layer-controls" style="margin-bottom: 10px;">
         <button onclick="changeWeatherLayer('temp_new')" class="btn btn-primary" id="tempbtn">Temperature</button>
-        <button onclick="changeWeatherLayer('precipitation_new')" class="btn btn-primary" id="rainbtn">Precipitation</button>
+        <button onclick="changeWeatherLayer('precipitation_new')" class="btn btn-primary"
+            id="rainbtn">Precipitation</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
