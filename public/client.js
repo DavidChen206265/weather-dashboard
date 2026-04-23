@@ -1,27 +1,39 @@
 const socket = io();
 
+// ui
 const chatWindow = document.getElementById("chat-window");
-const unitButton = document.getElementById("unitsButton");
+
 const locationInput = document.getElementById("location-input");
-const locationDisplay = document.getElementById("location-display");
-const searchButton = document.getElementById("search-button");
-const currentLocationButton = document.getElementById("current-location-button");
 const placeSelectionBar = document.getElementById("place-selection-bar");
+
+// displays
+const locationDisplay = document.getElementById("location-display");
 const currentWeatherDisplay = document.getElementById("current-weather-display");
 const todayTemperatureDisplay = document.getElementById("today-temperature-display");
 const hourlyForecastBox = document.getElementById("hourlyForecastBox");
+
+// buttons
+const searchButton = document.getElementById("search-button");
+const currentLocationButton = document.getElementById("current-location-button");
+const unitButton = document.getElementById("unitsButton");
+const tempButton = document.getElementById("tempbtn");
+const rainButton = document.getElementById("rainbtn");
 
 // location
 let userLocation = { lat: 48.4359, lng: -123.3516 };
 let currentUserLocation = { lat: 48.4359, lng: -123.3516 };
 
-let locationSearchingData = '';
+// helpers
+let locationSearchingData = ''; // stores the locations' data included in the previous location search
+let days = ["Sun", "Mon", "Tues", "Wed", "Thurs", "Fri", "Sat"];
 
-let units = "C";
+let units = "C"; // unit to display
 
 // weather map
 let initialWeatherConfig = null;
 
+// setup mapbox
+// note: this accessToken is a public key, so it is safe to be in client.js
 mapboxgl.accessToken = 'pk.eyJ1IjoiZGF2aWRjaGVuMjA2MjY1IiwiYSI6ImNtbWI1OXZ3ZTBmbnAycXBybHBlMnV3dDIifQ.1kx9xZYECXeQpEP-J7EKXA';
 const map = new mapboxgl.Map({
   container: 'map',
@@ -31,6 +43,8 @@ const map = new mapboxgl.Map({
 });
 
 window.onload = (event) => {
+
+  // get the forecast for the user's location by default
   updateCurrentLocation().then(getLocationName(currentUserLocation.lat, currentUserLocation.lng));
   getSevenDayForecast();
   getHourlyForecast();
@@ -42,14 +56,17 @@ async function getSevenDayForecast() {
   socket.emit("get_seven");
 }
 
-let days = ["Sun", "Mon", "Tues", "Wed", "Thurs", "Fri", "Sat"];
-
+// process the 7 day forecast
 socket.on("sevenDayForecast", async (info) => {
   let today = new Date();
   let dayoftheweek = today.getDay();
-  let printedday = "";
+  let printedday = ""; // day to print 
+  let emoji = ""; // emoji to print
+
+  // for each day's forecast:
   for (let r = 0; r < 7; r++) {
 
+    // get day of the week
     if (r == 0) {
       printedday = "Today";
       dayoftheweek++;
@@ -61,31 +78,23 @@ socket.on("sevenDayForecast", async (info) => {
       dayoftheweek = 0;
     };
 
-    let emoji = "";
-    //set background colours based off weather code
+    // assign emojis according to the weather code
     if (info.daily.weather_code[r] == 3) {
-      
       emoji = "☁️";
     } else if (info.daily.weather_code[r] == 1) {
-      
       emoji = "☀️";
     } else if (info.daily.weather_code[r] > 50) {
-      
       emoji = "🌧️";
     } else {
-      
       emoji = "☀️";
     }
-    //set Inner text with values
+
+    //set Inner text with values and correct units
     if (units == "C") {
       document.getElementById("daybox" + r).innerHTML = printedday + "<br>" + emoji + "<br>" + info.daily.temperature_2m_max[r] + "°C&uarr;<br>" + info.daily.temperature_2m_min[r] + "°C&darr;"
     } else {
       document.getElementById("daybox" + r).innerHTML = printedday + "<br>" + emoji + "<br>" + Math.floor((info.daily.temperature_2m_max[r] * 9 / 5) + 32) + "°F&uarr;<br>" + Math.floor((info.daily.temperature_2m_min[r] * 9 / 5) + 32) + "°F&darr;"
     }
-
-    //info.daily.temperature_2m_max[r] <<-- where we can print to the nodes
-    //info.daily.temperature_2m_min[r]
-    //info.daily.weather_code[r]
 
     // update todayTemperatureDisplay
     if (units == "C") {
@@ -93,14 +102,13 @@ socket.on("sevenDayForecast", async (info) => {
     } else {
       todayTemperatureDisplay.innerText = Math.floor((info.daily.temperature_2m_max[0] * 9 / 5) + 32) + '° | ' + Math.floor((info.daily.temperature_2m_min[0] * 9 / 5) + 32) + '°';
     }
-
-  }
+  } // function
 });
 
 socket.on("current_weather_response", async (info) => {
-  console.log("Current Weather:", info.current);
   let emoji = "";
-  //set background colours based off weather code
+
+  // assign emojis according to the weather code
   if (info.current.weather_code == 3 || info.current.weather_code == 2 || info.current.weather_code == 1) {
     emoji = "☁️";
   } else if (info.current.weather_code == 0) {
@@ -127,20 +135,22 @@ socket.on("connect", async () => {
   sendUserLocation(true);
 });
 
+// accept weather config
 socket.on('weather-config', (config) => {
   initialWeatherConfig = config;
-
   if (map.loaded()) {
     addWeatherMapLayer();
   }
 });
 
+// add weather map layer to openbox map
 map.on('load', () => {
   if (initialWeatherConfig) {
     addWeatherMapLayer();
   }
 });
 
+// process the hourly forecast
 socket.on('hourly_forecast_response', (info) => {
   hourlyForecastBox.innerHTML = '';
 
@@ -156,7 +166,7 @@ socket.on('hourly_forecast_response', (info) => {
 
 
   // add hourly data
-  for (let i = 0; i < 48; i++) {    
+  for (let i = 0; i < 48; i++) {
 
     // convert time
     shownDate = info.hourly.time[i];
@@ -185,6 +195,7 @@ socket.on('hourly_forecast_response', (info) => {
     shownTemperature = info.hourly.temperature_2m[i];
     if (units === 'F') shownTemperature = Math.floor((shownTemperature * 9 / 5) + 32);
 
+    // add an hour's item into the hourlyForecastBox
     hourlyForecastBox.innerHTML += `
             <div class="forecast-item">
                 <span class="temp">${shownTemperature}°</span>
@@ -192,35 +203,35 @@ socket.on('hourly_forecast_response', (info) => {
                 <span class="wind">${info.hourly.wind_speed_10m[i]}m/s</span>
                 <span class="time">${shownDate}</span>
             </div>`;
-
   }
-
-
-
-
 });
 
 // listen for AI response from server
 socket.on("ai_response", (msg) => {
 
   if (msg === "Waiting...") {
+
+    // display waiting message
     chatWindow.innerHTML += `<div div class="msg-ai" id = "loading" > <strong>AI:</strong> ${msg}</div > `;
   } else {
+
+    // display AI's response
     const loadingNode = document.getElementById("loading");
     if (loadingNode) loadingNode.remove(); // remove loading sign
     chatWindow.innerHTML += `<div div class="msg-ai" > <strong>AI:</strong> ${msg}</div > `;
   }
+
+  // auto scroll to the latest reply
   chatWindow.scrollTop = chatWindow.scrollHeight;
 });
 
 // listen for location name response
 socket.on("location_name_response", (locationNameData) => {
 
-  console.log('Location Name Data: ' + JSON.stringify(locationNameData));
-
   // display location name
   locationDisplay.innerText = '';
 
+  // add location name properties if they are in the response
   if (Object.hasOwn(locationNameData, "address")) {
     if (Object.hasOwn(locationNameData.address, "suburb")) {
       locationDisplay.innerText += (locationNameData.address.suburb);
@@ -244,12 +255,11 @@ socket.on("location_response", (msg) => {
 
   locationData = '';
 
-  if (msg.length === 0) {
+  // update searchSelectionBar
+  if (msg.length === 0 || msg.error) {
     placeSelectionBar.innerHTML = 'No Results Found';
   } else if (msg === 'Waiting...') {
     placeSelectionBar.innerHTML = 'Searching...';
-  } else if (msg.error) {
-    placeSelectionBar.innerHTML = 'No Results Found';
   } else {
 
     // if the data is valid
@@ -259,12 +269,15 @@ socket.on("location_response", (msg) => {
     let place;
     for (let i = 0; i < msg.length; i++) {
       place = msg[i];
+
+      // identify each place selection with its coordinates 
       placeSelectionBar.innerHTML += `<div div class="place-selection" id = "${place.lat},${place.lon}" > ${place.display_name}</div > `;
     }
+
+    // add the cancel button
     placeSelectionBar.innerHTML += `<div div class="place-selection" id = "place-selection-cancel" > Cancel</div > `;
 
-
-    // add eventListeners
+    // add eventListeners for each location
     for (let t = 0; t < msg.length; t++) {
       place = msg[t];
 
@@ -277,6 +290,7 @@ socket.on("location_response", (msg) => {
   }
 });
 
+// cancel the current search
 function cancelSelection() {
 
   // remove eventListeners
@@ -290,11 +304,11 @@ function cancelSelection() {
   locationInput.value = '';
 }
 
+// select this location to view its weather
 function selectLocation() {
   let position = this.id.split(",");
-  console.log(position);
 
-  // set userLocation
+  // update the viewing location
   userLocation.lat = position[0];
   userLocation.lng = position[1];
 
@@ -322,6 +336,7 @@ function selectLocation() {
   getCurrentWeather();
 }
 
+// add a new weather map layer
 function addWeatherMapLayer() {
   if (map.getSource('weather-source')) return;
 
@@ -341,10 +356,8 @@ function addWeatherMapLayer() {
   });
 }
 
-const tempButton = document.getElementById("tempbtn")
-const rainButton = document.getElementById("rainbtn")
-
 function changeWeatherLayer(newLayerType) {
+
   // remove existing layers
   if (map.getLayer('weather-layer')) {
     map.removeLayer('weather-layer');
@@ -362,6 +375,7 @@ function changeWeatherLayer(newLayerType) {
     'tileSize': 256
   });
 
+  // update the color of buttons
   if (newLayerType == 'temp_new') {
     tempButton.style.backgroundColor = "#0056b3";
     rainButton.style.backgroundColor = "#007bff";
@@ -383,7 +397,7 @@ function changeWeatherLayer(newLayerType) {
   console.log(`Change layer to: ${newLayerType}`);
 }
 
-// send message to server
+// request the AI analysis
 function requireWeatherData() {
 
   // show user's message in chatWindow
@@ -394,7 +408,6 @@ function requireWeatherData() {
 
   // send request to server
   socket.emit("require_weather_data", units);
-
 }
 
 // press Enter to search for location
@@ -406,11 +419,9 @@ function getCurrentWeather() {
   socket.emit('get_current_weather');
 }
 
+// search for a location
 function searchLocation() {
-
   console.log('Searching for: ' + locationInput.value);
-
-
   let searchText = locationInput.value;
 
   // check for input
@@ -423,11 +434,11 @@ function searchLocation() {
   socket.emit("search_for_location", searchText);
 }
 
+// get the name of location by coordinates
 function getLocationName(lat, lng) {
 
   // send search request
   socket.emit("require_location_name", lat, lng);
-
 }
 
 // send user location to server
@@ -437,6 +448,7 @@ function sendUserLocation(isCurrent = false) {
   socket.emit("send_location", userLocation, isCurrent);
 }
 
+// get the current user location
 function updateCurrentLocation() {
 
   return new Promise((resolve, reject) => {
@@ -461,11 +473,11 @@ function updateCurrentLocation() {
         reject(error);
       },
       { enableHighAccuracy: true, timeout: 10000 },
-    );
-  });
+    ); // getCurrentPosition
+  }); // Promise
+} // updateCurrentLocation
 
-}
-
+// switch units to display
 function switchUnits() {
   if (units == "C") {
     units = "F";
@@ -475,16 +487,18 @@ function switchUnits() {
     unitButton.innerHTML = "°C";
   }
   console.log("Units:" + units);
+
+  // request new forecasts
   getSevenDayForecast();
   getHourlyForecast();
   getCurrentWeather();
 }
 
 function getHourlyForecast() {
-
   socket.emit('require_hourly_forecast');
 }
 
+// switch the view location back to current location
 function backToCurrentLocation() {
 
   // update current location
@@ -501,14 +515,14 @@ function backToCurrentLocation() {
 
 // load the service worker
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js').then(function(registration) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').then(function (registration) {
       console.log('Service Worker registered with scope:', registration.scope);
-    }, function(error) {
+    }, function (error) {
       console.log('Service Worker registration failed:', error);
     });
   });
-}   
+}
 
 // handle install prompt
 let deferredPrompt;
