@@ -12,11 +12,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// user location
-let userLocation = { lat: 48.4359, lng: -123.3516 };
-let currentUserLocation = { lat: 48.4359, lng: -123.3516 };
-
 app.use(express.static("public"));
+
+// user location
+let userLocation = { lat: 48.4359, lng: -123.3516 }; // the location user is viewing
+let currentUserLocation = { lat: 48.4359, lng: -123.3516 }; // user's physical location
 
 // AI API request variables
 const API_BASE_URL = "https://api.cetaceang.qzz.io/v1/chat/completions";
@@ -27,22 +27,20 @@ const AI_API_KEY = process.env.AI_API_KEY;
 const GEO_API_KEY = process.env.GEO_API_KEY;
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 
-const mapboxAgent = new https.Agent({ 
-    keepAlive: true, 
-    maxSockets: 50 
+const mapboxAgent = new https.Agent({
+  keepAlive: true,
+  maxSockets: 50
 });
 
 // after a client connected
 io.on("connection", (socket) => {
   console.log("A client has connected.");
 
-  // weather map settings
+  // send weather map settings to user
   socket.emit('weather-config', {
     layer: 'temp_new',
     opacity: 0.6
   });
-
-
 
   // ask AI
   socket.on("require_weather_data", async (units) => {
@@ -63,10 +61,6 @@ io.on("connection", (socket) => {
       let currentWind = await weatherData.hourly.wind_speed_10m[hour];
       let currentRain = await weatherData.hourly.precipitation[hour];
       let currentRainChance = await weatherData.hourly.precipitation_probability[hour];
-      console.log(currentTemp);
-      console.log(currentWind);
-      console.log(currentRain);
-      console.log(currentRainChance);
       let prompt = `You are a helpful weather assistant.
                     Here is the weather data:
                     Temperature: ${currentTemp}°${units},
@@ -113,10 +107,11 @@ io.on("connection", (socket) => {
     }
   });
 
-  // require location name
+  // when client requires a location name  by its coordinates
   socket.on("require_location_name", async (lat, lng) => {
     try {
 
+      // get the location name from locationiq
       let locationNameResponse = await fetch(`https://us1.locationiq.com/v1/reverse?key=${GEO_API_KEY}&lat=${lat}&lon=${lng}&format=json`);
       let locationNameData = await locationNameResponse.json();
 
@@ -133,13 +128,17 @@ io.on("connection", (socket) => {
   socket.on("get_seven", async () => {
     let sevenDayForecast = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&daily=temperature_2m_max,temperature_2m_min,weather_code`);
     let sevenDayForecastInfo = await sevenDayForecast.json();
+
+    // send back the response
     socket.emit("sevenDayForecast", sevenDayForecastInfo);
   });
 
-  // get the seven day forecast
+  // get the current weather data
   socket.on("get_current_weather", async () => {
     let currentWeatherData = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&current=temperature_2m,weather_code`);
     let currentWeatherResponse = await currentWeatherData.json();
+
+    // send back the response
     socket.emit("current_weather_response", currentWeatherResponse);
   });
 
@@ -147,13 +146,12 @@ io.on("connection", (socket) => {
   socket.on("require_hourly_forecast", async () => {
     let hourlyData = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.lat}&longitude=${userLocation.lng}&hourly=temperature_2m,weather_code,wind_speed_10m&past_days=0&forecast_days=2`);
     let hourlyResponse = await hourlyData.json();
-    socket.emit("hourly_forecast_response", hourlyResponse);
 
-    // test
-    console.log('hourly forecast: ' + JSON.stringify(hourlyResponse));
-    
+    // send back the response
+    socket.emit("hourly_forecast_response", hourlyResponse);
   });
 
+  // update user's viewing location / current location
   socket.on("send_location", async (location, isCurrent) => {
 
     if (isCurrent) {
@@ -165,24 +163,20 @@ io.on("connection", (socket) => {
       userLocation.lng = location.lng;
       console.log(`User location: lat_${userLocation.lat}, lng_${userLocation.lng}`);
     }
-
   });
 
   // search for location
   socket.on("search_for_location", async (searchText) => {
     try {
 
-      console.log('User searches for: ' + searchText);
-
       // send back the waiting status
       socket.emit("location_response", "Waiting...");
 
+      // get the possible locations, display the locations near the user at front
       let locationResponse = await fetch(`https://us1.locationiq.com/v1/search?key=${GEO_API_KEY}&q=${searchText}&format=json&limit=20&bounded=0&importancesort=0&viewbox=${currentUserLocation.lng + 1},${currentUserLocation.lat + 1},${currentUserLocation.lng - 1},${currentUserLocation.lat - 1}`);
       let locationData = await locationResponse.json();
 
-      console.log(locationData);
-
-      // send back the waiting status
+      // send back an array of possible locations
       socket.emit("location_response", locationData);
 
     } catch (error) {
@@ -216,6 +210,7 @@ app.get('/weather-proxy/:layer/:z/:x/:y', async (req, res) => {
   }
 });
 
+// port to listen (3001 on davidchen.me, written in the .env file)
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server is up, visit http://localhost:${PORT}`);
